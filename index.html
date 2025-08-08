@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Feria de Ciencias - Juego Químico Interactivo</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#111;color:#fff;margin:0;padding:0}header{background:#222;padding:10px;text-align:center}header h1{margin:10px 0;font-size:24px}nav{background:#333;display:flex;justify-content:center;flex-wrap:wrap}nav button{padding:10px 20px;border:none;background:#444;color:#fff;cursor:pointer;font-size:16px;margin:5px;border-radius:5px}nav button.active{background:#007bff}.contenedor{padding:20px;text-align:center}.tabla{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));grid-gap:10px;max-width:700px;margin:20px auto}.elemento{background:#222;border:2px solid #555;padding:10px;border-radius:10px;cursor:pointer;transition:0.15s}.elemento:hover{background:#444}.correcto{background:green !important;color:#fff}.incorrecto{background:red !important;color:#fff}#btnNueva{margin-top:20px;padding:10px 20px;background:#007bff;border:none;border-radius:8px;color:#fff;font-size:16px;cursor:pointer}#btnNueva:hover{background:#0056b3}.marcador{font-size:18px;margin-top:10px}.cronometro{font-size:20px;margin-top:10px;color:#ffcc00}.seccion{display:none}.seccion.activa{display:block}@media(max-width:600px){.tabla{grid-template-columns:repeat(2,1fr)}}.center-row{display:flex;gap:10px;justify-content:center;align-items:center}
+
+/* Configuración Electrónica: 5 columnas */
+#config_tabla {
+  display: grid;
+  grid-template-columns: repeat(5, 100px);
+  grid-gap: 10px;
+  justify-content: center;
+}
+
+/* Nomenclatura: 2 columnas */
+#nom_tabla {
+  display: grid;
+  grid-template-columns: repeat(2, 200px);
+  grid-gap: 10px;
+  justify-content: center;
+}
+
+/* Cajas de opciones */
+.elemento {
+  background-color: #222;
+  border: 2px solid #555;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  height: 70px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.elemento:hover {
+  background-color: #444;
+}
+</style>
+</head>
+<body>
+<header><h1>🔬 Juego Químico Interactivo</h1></header>
+<nav>
+  <button class="active" onclick="mostrarSeccion('configuracion', this)">Configuración Electrónica</button>
+  <button onclick="mostrarSeccion('nomenclatura', this)">Nomenclatura</button>
+</nav>
+<div class="contenedor">
+  <!-- Configuración Electrónica -->
+  <div id="configuracion" class="seccion activa">
+    <h2>¿Qué elemento tiene esta configuración?</h2>
+    <p><strong id="config_config">---</strong></p>
+    <div class="cronometro">⏱️ Tiempo: <span id="config_tiempo">30</span> s</div>
+    <div class="marcador">✅ Aciertos: <span id="config_puntos">0</span></div>
+    <div class="marcador">❤️ Oportunidades: <span id="config_vidas">3</span></div>
+    <div class="tabla" id="config_tabla"></div>
+    <p id="config_resultado"></p>
+    <div class="center-row">
+      <button id="config_btnNueva" onclick="config_nuevaPregunta()">🔁 Nueva Pregunta</button>
+      <button id="config_btnReiniciar" style="display:none;" onclick="config_reiniciarJuego()">🔄 Reiniciar Juego</button>
+    </div>
+  </div>
+
+  <!-- Nomenclatura -->
+  <div id="nomenclatura" class="seccion">
+    <h2>🧪 Nomenclatura Química</h2>
+    <p id="nom_indicacion"><strong id="nom_tipo"></strong></p>
+    <p><strong id="nom_formula">---</strong></p>
+    <div class="cronometro">⏱️ Tiempo: <span id="nom_tiempo">30</span> s</div>
+    <div class="marcador">✅ Aciertos: <span id="nom_puntos">0</span></div>
+    <div class="marcador">❤️ Oportunidades: <span id="nom_vidas">3</span></div>
+    <div class="tabla" id="nom_tabla"></div>
+    <p id="nom_resultado"></p>
+    <div class="center-row">
+      <button id="nom_btnNueva" onclick="nom_nuevaPregunta()">🔁 Nueva Pregunta</button>
+      <button id="nom_btnReiniciar" style="display:none;" onclick="nom_reiniciarJuego()">🔄 Reiniciar Juego</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== UTIL ====== */
+function mostrarSeccion(id, btn){
+  document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('activa'));
+  document.getElementById(id).classList.add('activa');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+/* ====== CONFIGURACIÓN ELECTRÓNICA (prefijo config_) ====== */
+const config_preguntas = [
+  { config: "1s¹", elemento: "H" }, { config: "1s²", elemento: "He" },
+  { config: "1s² 2s¹", elemento: "Li" }, { config: "1s² 2s²", elemento: "Be" },
+  { config: "1s² 2s² 2p¹", elemento: "B" }, { config: "1s² 2s² 2p²", elemento: "C" },
+  { config: "1s² 2s² 2p³", elemento: "N" }, { config: "1s² 2s² 2p⁴", elemento: "O" },
+  { config: "1s² 2s² 2p⁵", elemento: "F" }, { config: "1s² 2s² 2p⁶", elemento: "Ne" },
+  { config: "1s² 2s² 2p⁶ 3s¹", elemento: "Na" }, { config: "1s² 2s² 2p⁶ 3s²", elemento: "Mg" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p¹", elemento: "Al" }, { config: "1s² 2s² 2p⁶ 3s² 3p²", elemento: "Si" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p³", elemento: "P" }, { config: "1s² 2s² 2p⁶ 3s² 3p⁴", elemento: "S" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p⁵", elemento: "Cl" }, { config: "1s² 2s² 2p⁶ 3s² 3p⁶", elemento: "Ar" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹", elemento: "K" }, { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 4s²", elemento: "Ca" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁶ 4s²", elemento: "Fe" }, { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s¹", elemento: "Cu" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p¹", elemento: "Ga" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁵", elemento: "Br" },
+  { config: "1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶", elemento: "Kr" }
+];
+
+const config_opciones = [
+  "H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si",
+  "P","S","Cl","Ar","K","Ca","Fe","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+  "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd"
+];
+
+let config_respuestaCorrecta = "";
+let config_puntos = 0;
+let config_vidas = 3;
+let config_tiempo = 30;
+let config_cuentaRegresiva = null;
+let config_bloqueado = false;
+
+function config_nuevaPregunta(){
+  if(config_vidas<=0){
+    document.getElementById("config_resultado").innerText = "💀 Has perdido todas tus oportunidades.";
+    document.getElementById("config_btnReiniciar").style.display = "inline-block";
+    return;
+  }
+  const pregunta = config_preguntas[Math.floor(Math.random()*config_preguntas.length)];
+  config_respuestaCorrecta = pregunta.elemento;
+  document.getElementById("config_config").innerText = pregunta.config;
+
+  const opcionesMezcladas = [...config_opciones].sort(()=>Math.random()-0.5).slice(0,10);
+  if(!opcionesMezcladas.includes(config_respuestaCorrecta)) opcionesMezcladas[Math.floor(Math.random()*10)] = config_respuestaCorrecta;
+
+  const tabla = document.getElementById("config_tabla");
+  tabla.innerHTML = "";
+  opcionesMezcladas.forEach(simbolo=>{
+    const btn = document.createElement("div");
+    btn.className = "elemento";
+    btn.innerText = simbolo;
+    btn.onclick = ()=>config_verificar(btn, simbolo);
+    tabla.appendChild(btn);
+  });
+
+  document.getElementById("config_resultado").innerText = "";
+  config_bloqueado = false;
+  config_tiempo = 30;
+  document.getElementById("config_tiempo").innerText = config_tiempo;
+  document.getElementById("config_puntos").innerText = config_puntos;
+  document.getElementById("config_vidas").innerText = config_vidas;
+  clearInterval(config_cuentaRegresiva);
+  config_cuentaRegresiva = setInterval(()=>{
+    config_tiempo--;
+    document.getElementById("config_tiempo").innerText = config_tiempo;
+    if(config_tiempo===0) config_perderVida("⏰ Tiempo agotado. Era " + config_respuestaCorrecta);
+  },1000);
+}
+
+function config_verificar(boton, seleccion){
+  if(config_bloqueado) return;
+  if(seleccion===config_respuestaCorrecta){
+    boton.classList.add("correcto");
+    document.getElementById("config_resultado").innerText = `✅ ¡Correcto! Es ${config_respuestaCorrecta}.`;
+    config_puntos++;
+    document.getElementById("config_puntos").innerText = config_puntos;
+    clearInterval(config_cuentaRegresiva);
+    config_bloquearBotones();
+  } else {
+    boton.classList.add("incorrecto");
+    setTimeout(()=>boton.classList.remove("incorrecto"),700);
+    config_perderVida(`❌ Incorrecto. Era ${config_respuestaCorrecta}`);
+  }
+}
+
+function config_perderVida(mensaje){
+  clearInterval(config_cuentaRegresiva);
+  document.getElementById("config_resultado").innerText = mensaje;
+  config_vidas--;
+  document.getElementById("config_vidas").innerText = config_vidas;
+  if(config_vidas<=0){
+    document.getElementById("config_resultado").innerText = "💀 Has perdido todas tus oportunidades.";
+    document.getElementById("config_btnReiniciar").style.display = "inline-block";
+  }
+  config_bloquearBotones();
+}
+
+function config_bloquearBotones(){
+  document.querySelectorAll("#config_tabla .elemento").forEach(btn=>btn.onclick=null);
+  config_bloqueado = true;
+}
+
+function config_reiniciarJuego(){
+  config_puntos = 0;
+  config_vidas = 3;
+  document.getElementById("config_puntos").innerText = config_puntos;
+  document.getElementById("config_vidas").innerText = config_vidas;
+  document.getElementById("config_btnReiniciar").style.display = "none";
+  config_nuevaPregunta();
+}
+
+config_nuevaPregunta();
+
+/* ====== NOMENCLATURA (60 ejemplos) ====== */
+const nom_preguntas = [
+  // 15 ácidos (hidrácidos y oxácidos)
+  {formula:"HCl", trad:"Ácido clorhídrico", stock:"Cloruro de hidrógeno", sist:"Cloruro de hidrógeno"}, 
+  {formula:"HF", trad:"Ácido fluorhídrico", stock:"Fluoruro de hidrógeno", sist:"Fluoruro de hidrógeno"}, 
+  {formula:"HBr", trad:"Ácido bromhídrico", stock:"Bromuro de hidrógeno", sist:"Bromuro de hidrógeno"}, 
+  {formula:"HI", trad:"Ácido yodhídrico", stock:"Yoduro de hidrógeno", sist:"Yoduro de hidrógeno"}, 
+  {formula:"H₂S", trad:"Ácido sulfhídrico", stock:"Sulfuro de hidrógeno", sist:"Sulfuro de hidrógeno"}, 
+  {formula:"H₂Se", trad:"Ácido selenhídrico", stock:"Seleniuro de hidrógeno", sist:"Seleniuro de hidrógeno"}, 
+  {formula:"H₂SO₄", trad:"Ácido sulfúrico", stock:"Ácido tetraoxosulfúrico (VI)", sist:"Tetraoxosulfato(VI) de dihidrógeno"}, 
+  {formula:"H₂SO₃", trad:"Ácido sulfuroso", stock:"Ácido trioxosulfúrico (IV)", sist:"Trioxosulfato(IV) de dihidrógeno"}, 
+  {formula:"HNO₃", trad:"Ácido nítrico", stock:"Ácido trioxonítrico (V)", sist:"Trioxonitrato(V) de hidrógeno"}, 
+  {formula:"HNO₂", trad:"Ácido nitroso", stock:"Ácido dioxonítrico (III)", sist:"Dioxonitrito(III) de hidrógeno"}, 
+  {formula:"H₃PO₄", trad:"Ácido fosfórico", stock:"Ácido tetraoxofosfórico (V)", sist:"Tetraoxofosfato(V) de trihidrógeno"}, 
+  {formula:"H₃PO₃", trad:"Ácido fosforoso", stock:"Ácido trioxofosfórico (III)", sist:"Trioxofosfato(III) de trihidrógeno"}, 
+  {formula:"H₂CO₃", trad:"Ácido carbónico", stock:"Ácido trioxocarbonílico (IV)", sist:"Trioxocarbonato(IV) de dihidrógeno"}, 
+  {formula:"HClO₄", trad:"Ácido perclórico", stock:"Ácido tetraoxoclórico (VII)", sist:"Peroxocloroato de hidrógeno"}, 
+  {formula:"HClO₃", trad:"Ácido clórico", stock:"Ácido trioxoclórico (V)", sist:"Trioxoclorato(V) de hidrógeno"},
+
+  // 15 hidróxidos
+  {formula:"NaOH", trad:"Hidróxido de sodio", stock:"Hidróxido de sodio", sist:"Hidróxido de sodio"},
+  {formula:"KOH", trad:"Hidróxido de potasio", stock:"Hidróxido de potasio", sist:"Hidróxido de potasio"},
+  {formula:"Ca(OH)₂", trad:"Hidróxido de calcio", stock:"Hidróxido de calcio", sist:"Dihidróxido de calcio"},
+  {formula:"Mg(OH)₂", trad:"Hidróxido de magnesio", stock:"Hidróxido de magnesio", sist:"Dihidróxido de magnesio"},
+  {formula:"Fe(OH)₃", trad:"Hidróxido de hierro (III)", stock:"Hidróxido de hierro (III)", sist:"Trihidróxido de hierro"},
+  {formula:"Fe(OH)₂", trad:"Hidróxido de hierro (II)", stock:"Hidróxido de hierro (II)", sist:"Dihidróxido de hierro"},
+  {formula:"Al(OH)₃", trad:"Hidróxido de aluminio", stock:"Hidróxido de aluminio", sist:"Trihidróxido de aluminio"},
+  {formula:"Zn(OH)₂", trad:"Hidróxido de zinc", stock:"Hidróxido de zinc", sist:"Dihidróxido de zinc"},
+  {formula:"Ni(OH)₂", trad:"Hidróxido de níquel (II)", stock:"Hidróxido de níquel (II)", sist:"Dihidróxido de níquel"},
+  {formula:"Pb(OH)₂", trad:"Hidróxido de plomo (II)", stock:"Hidróxido de plomo (II)", sist:"Dihidróxido de plomo"},
+  {formula:"Ba(OH)₂", trad:"Hidróxido de bario", stock:"Hidróxido de bario", sist:"Dihidróxido de bario"},
+  {formula:"Sr(OH)₂", trad:"Hidróxido de estroncio", stock:"Hidróxido de estroncio", sist:"Dihidróxido de estroncio"},
+  {formula:"Cu(OH)₂", trad:"Hidróxido de cobre (II)", stock:"Hidróxido de cobre (II)", sist:"Dihidróxido de cobre"},
+  {formula:"Hg(OH)₂", trad:"Hidróxido de mercurio (II)", stock:"Hidróxido de mercurio (II)", sist:"Dihidróxido de mercurio"},
+  {formula:"Cr(OH)₃", trad:"Hidróxido de cromo (III)", stock:"Hidróxido de cromo (III)", sist:"Trihidróxido de cromo"},
+
+  // 15 óxidos
+  {formula:"CO₂", trad:"Dióxido de carbono", stock:"Óxido de carbono (IV)", sist:"Dióxido de carbono"},
+  {formula:"CO", trad:"Monóxido de carbono", stock:"Óxido de carbono (II)", sist:"Monóxido de carbono"},
+  {formula:"SO₂", trad:"Dióxido de azufre", stock:"Óxido de azufre (IV)", sist:"Dióxido de azufre"},
+  {formula:"SO₃", trad:"Trióxido de azufre", stock:"Óxido de azufre (VI)", sist:"Trióxido de azufre"},
+  {formula:"N₂O₅", trad:"Pentóxido de dinitrógeno", stock:"Óxido de nitrógeno (V)", sist:"Pentóxido de dinitrógeno"},
+  {formula:"N₂O₃", trad:"Trióxido de dinitrógeno", stock:"Óxido de nitrógeno (III)", sist:"Trióxido de dinitrógeno"},
+  {formula:"P₂O₅", trad:"Pentóxido de fósforo", stock:"Óxido de fósforo (V)", sist:"Pentóxido de fósforo"},
+  {formula:"P₂O₃", trad:"Trióxido de fósforo", stock:"Óxido de fósforo (III)", sist:"Trióxido de fósforo"},
+  {formula:"Fe₂O₃", trad:"Óxido de hierro (III)", stock:"Óxido de hierro (III)", sist:"Trióxido de dihierro"},
+  {formula:"FeO", trad:"Óxido de hierro (II)", stock:"Óxido de hierro (II)", sist:"Monóxido de hierro"},
+  {formula:"CuO", trad:"Óxido de cobre (II)", stock:"Óxido de cobre (II)", sist:"Óxido de cobre"},
+  {formula:"Cu₂O", trad:"Óxido de cobre (I)", stock:"Óxido de cobre (I)", sist:"Monóxido de dicobre"},
+  {formula:"ZnO", trad:"Óxido de zinc", stock:"Óxido de zinc", sist:"Óxido de zinc"},
+  {formula:"Al₂O₃", trad:"Óxido de aluminio", stock:"Óxido de aluminio", sist:"Trióxido de dialuminio"},
+  {formula:"CaO", trad:"Óxido de calcio", stock:"Óxido de calcio", sist:"Óxido de calcio"},
+
+  // 15 sales
+  {formula:"NaCl", trad:"Cloruro de sodio", stock:"Cloruro de sodio", sist:"Cloruro de sodio"},
+  {formula:"KBr", trad:"Bromuro de potasio", stock:"Bromuro de potasio", sist:"Bromuro de potasio"},
+  {formula:"CaCO₃", trad:"Carbonato de calcio", stock:"Carbonato de calcio", sist:"Trioxocarbonato de calcio"},
+  {formula:"Na₂SO₄", trad:"Sulfato de sodio", stock:"Sulfato de sodio", sist:"Tetraoxosulfato de disodio"},
+  {formula:"KNO₃", trad:"Nitrato de potasio", stock:"Nitrato de potasio", sist:"Trioxonitrato de potasio"},
+  {formula:"MgCl₂", trad:"Cloruro de magnesio", stock:"Cloruro de magnesio", sist:"Cloruro de magnesio"},
+  {formula:"BaSO₄", trad:"Sulfato de bario", stock:"Sulfato de bario", sist:"Tetraoxosulfato de bario"},
+  {formula:"PbI₂", trad:"Yoduro de plomo (II)", stock:"Yoduro de plomo (II)", sist:"Diyoduro de plomo"},
+  {formula:"AgCl", trad:"Cloruro de plata", stock:"Cloruro de plata", sist:"Cloruro de plata"},
+  {formula:"Fe₂(SO₄)₃", trad:"Sulfato de hierro (III)", stock:"Sulfato de hierro (III)", sist:"Tetraoxosulfato de trihierro"},
+  {formula:"FeSO₄", trad:"Sulfato de hierro (II)", stock:"Sulfato de hierro (II)", sist:"Tetraoxosulfato de hierro (II)"},
+  {formula:"Al₂(SO₄)₃", trad:"Sulfato de aluminio", stock:"Sulfato de aluminio", sist:"Tetraoxosulfato de dialuminio"},
+  {formula:"CuSO₄", trad:"Sulfato de cobre (II)", stock:"Sulfato de cobre (II)", sist:"Tetraoxosulfato de cobre"},
+  {formula:"ZnSO₄", trad:"Sulfato de zinc", stock:"Sulfato de zinc", sist:"Tetraoxosulfato de zinc"},
+  {formula:"Na₃PO₄", trad:"Fosfato de sodio", stock:"Fosfato de sodio", sist:"Tetraoxofosfato de trisodio"}
+];
+
+// Variables de nomenclatura
+let nom_respuesta = "";
+let nom_puntos = 0;
+let nom_vidas = 3;
+let nom_tiempo = 30;
+let nom_cuentaRegresiva = null;
+let nom_bloqueado = false;
+let nom_tipoPedido = "";
+
+// iniciar nomenclatura
+function nom_nuevaPregunta(){
+  if(nom_vidas<=0){
+    document.getElementById("nom_resultado").innerText = "💀 Has perdido todas tus oportunidades.";
+    document.getElementById("nom_btnReiniciar").style.display = "inline-block";
+    return;
+  }
+
+  const pregunta = nom_preguntas[Math.floor(Math.random()*nom_preguntas.length)];
+  const tipos = ["trad","stock","sist"];
+  const tipo = tipos[Math.floor(Math.random()*tipos.length)];
+  nom_tipoPedido = tipo;
+  let tipoTexto = (tipo==="trad")? "Tradicional": (tipo==="stock")? "Stock":"Sistemática/IUPAC";
+  document.getElementById("nom_tipo").innerText = `Selecciona el nombre (${tipoTexto})`;
+  document.getElementById("nom_formula").innerText = pregunta.formula;
+  const correcto = (tipo==="trad")? pregunta.trad : (tipo==="stock")? pregunta.stock : pregunta.sist;
+  nom_respuesta = correcto;
+
+  // construir opciones
+  const opcionesSet = new Set();
+  opcionesSet.add(correcto);
+  if(pregunta.trad && pregunta.trad!==correcto) opcionesSet.add(pregunta.trad);
+  if(pregunta.stock && pregunta.stock!==correcto) opcionesSet.add(pregunta.stock);
+  if(pregunta.sist && pregunta.sist!==correcto) opcionesSet.add(pregunta.sist);
+
+  // todos los nombres
+  let allNames = [];
+  nom_preguntas.forEach(p=>{ allNames.push(p.trad); allNames.push(p.stock); allNames.push(p.sist); });
+
+  function crearDistractorInventado(formula){
+    return "Nombre desconocido de " + formula;
+  }
+
+  let opcionesArr = Array.from(opcionesSet);
+  while(opcionesArr.length<3){
+    const cand = allNames[Math.floor(Math.random()*allNames.length)];
+    if(cand && !opcionesArr.includes(cand)) opcionesArr.push(cand);
+  }
+  opcionesArr.push(crearDistractorInventado(pregunta.formula));
+  opcionesArr = opcionesArr.sort(()=>Math.random()-0.5).slice(0,4);
+
+  // renderizar
+  const tabla = document.getElementById("nom_tabla");
+  tabla.innerHTML = "";
+  opcionesArr.forEach(nombre=>{
+    const btn = document.createElement("div");
+    btn.className = "elemento";
+    btn.innerText = nombre;
+    btn.onclick = ()=>nom_verificar(btn, nombre);
+    tabla.appendChild(btn);
+  });
+
+  document.getElementById("nom_resultado").innerText = "";
+  nom_bloqueado = false;
+  nom_tiempo = 30;
+  document.getElementById("nom_tiempo").innerText = nom_tiempo;
+  document.getElementById("nom_puntos").innerText = nom_puntos;
+  document.getElementById("nom_vidas").innerText = nom_vidas;
+  clearInterval(nom_cuentaRegresiva);
+  nom_cuentaRegresiva = setInterval(()=>{
+    nom_tiempo--;
+    document.getElementById("nom_tiempo").innerText = nom_tiempo;
+    if(nom_tiempo===0) nom_perderVida("⏰ Tiempo agotado. Era " + nom_respuesta);
+  },1000);
+}
+
+function nom_verificar(boton, seleccion){
+  if(nom_bloqueado) return;
+  if(seleccion===nom_respuesta){
+    boton.classList.add("correcto");
+    document.getElementById("nom_resultado").innerText = `✅ ¡Correcto! Es ${nom_respuesta}.`;
+    nom_puntos++;
+    document.getElementById("nom_puntos").innerText = nom_puntos;
+    clearInterval(nom_cuentaRegresiva);
+    nom_bloquearBotones();
+  } else {
+    boton.classList.add("incorrecto");
+    setTimeout(()=>boton.classList.remove("incorrecto"),700);
+    nom_perderVida(`❌ Incorrecto. Era ${nom_respuesta}`);
+  }
+}
+
+function nom_perderVida(mensaje){
+  clearInterval(nom_cuentaRegresiva);
+  document.getElementById("nom_resultado").innerText = mensaje;
+  nom_vidas--;
+  document.getElementById("nom_vidas").innerText = nom_vidas;
+  if(nom_vidas<=0){
+    document.getElementById("nom_resultado").innerText = "💀 Has perdido todas tus oportunidades.";
+    document.getElementById("nom_btnReiniciar").style.display = "inline-block";
+  }
+  nom_bloquearBotones();
+}
+
+function nom_bloquearBotones(){
+  document.querySelectorAll("#nom_tabla .elemento").forEach(btn=>btn.onclick=null);
+  nom_bloqueado = true;
+}
+
+function nom_reiniciarJuego(){
+  nom_puntos = 0;
+  nom_vidas = 3;
+  document.getElementById("nom_puntos").innerText = nom_puntos;
+  document.getElementById("nom_vidas").innerText = nom_vidas;
+  document.getElementById("nom_btnReiniciar").style.display = "none";
+  nom_nuevaPregunta();
+}
+
+// iniciar ambos juegos
+config_nuevaPregunta();
+nom_nuevaPregunta();
+
+</script>
+</body>
+</html>
